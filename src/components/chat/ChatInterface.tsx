@@ -9,6 +9,7 @@ import ChatInput from './ChatInput';
 import SuggestionChips from './SuggestionChips';
 import { Loader2 } from 'lucide-react';
 
+// Default suggestions shown before the first message is sent.
 const INITIAL_SUGGESTIONS = [
   '¿Cuáles son las 5 zonas con mayor Lead Penetration esta semana?',
   'Compara el Perfect Order entre zonas Wealthy y Non Wealthy en México',
@@ -19,6 +20,7 @@ const INITIAL_SUGGESTIONS = [
 ];
 
 export default function ChatInterface() {
+  // sessionId is generated once per tab mount — scopes Bedrock Agent memory to this conversation.
   const [sessionId] = useState<string>(() => uuidv4());
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -26,10 +28,15 @@ export default function ChatInterface() {
   const [suggestions, setSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to the latest message whenever messages or loading state changes.
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  /**
+   * Sends the user message, appends both user and assistant messages to the
+   * conversation, and updates proactive suggestions from the agent response.
+   */
   const handleSend = useCallback(async (text?: string) => {
     const content = (text ?? input).trim();
     if (!content || loading) return;
