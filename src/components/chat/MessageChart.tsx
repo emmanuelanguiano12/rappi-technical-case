@@ -20,6 +20,11 @@ interface Props {
   chart: ChartData;
 }
 
+/**
+ * Renders a Recharts line or bar chart from structured chart_data returned by
+ * the Bedrock Agent. Line charts are used for temporal trends; bar charts for
+ * comparisons and rankings.
+ */
 export default function MessageChart({ chart }: Props) {
   const ChartComponent = chart.type === 'line' ? LineChart : BarChart;
 

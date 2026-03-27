@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { generateReport } from '@/lib/api';
-import { Loader2, RefreshCw, Download } from 'lucide-react';
+import { generateReport, sendReportByEmail } from '@/lib/api';
+import { Loader2, RefreshCw, Download, Mail } from 'lucide-react';
 
 function downloadMarkdown(content: string) {
   const blob = new Blob([content], { type: 'text/markdown' });
@@ -21,10 +21,16 @@ export default function ReportView() {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showEmailInput, setShowEmailInput] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sent' | 'error'>('idle');
 
   async function handleGenerate() {
     setLoading(true);
     setError(null);
+    setEmailStatus('idle');
+    setShowEmailInput(false);
     try {
       const res = await generateReport();
       setReport(res.report);
@@ -33,6 +39,22 @@ export default function ReportView() {
       setError('No se pudo generar el reporte. Verifica la conexión con el backend.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSendEmail() {
+    if (!report || !email) return;
+    setEmailSending(true);
+    setEmailStatus('idle');
+    try {
+      await sendReportByEmail(email, report);
+      setEmailStatus('sent');
+      setShowEmailInput(false);
+      setEmail('');
+    } catch {
+      setEmailStatus('error');
+    } finally {
+      setEmailSending(false);
     }
   }
 
@@ -46,13 +68,22 @@ export default function ReportView() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {report && (
-            <button
-              onClick={() => downloadMarkdown(report)}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
-            >
-              <Download size={13} />
-              Exportar MD
-            </button>
+            <>
+              <button
+                onClick={() => downloadMarkdown(report)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+              >
+                <Download size={13} />
+                Exportar MD
+              </button>
+              <button
+                onClick={() => { setShowEmailInput(v => !v); setEmailStatus('idle'); }}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+              >
+                <Mail size={13} />
+                Enviar por email
+              </button>
+            </>
           )}
           <button
             onClick={handleGenerate}
@@ -68,6 +99,39 @@ export default function ReportView() {
           </button>
         </div>
       </header>
+
+      {/* Email input panel */}
+      {showEmailInput && (
+        <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="correo@ejemplo.com"
+            className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-orange-400 bg-white"
+            onKeyDown={e => e.key === 'Enter' && handleSendEmail()}
+          />
+          <button
+            onClick={handleSendEmail}
+            disabled={emailSending || !email}
+            className="flex items-center gap-1.5 text-xs bg-orange-500 text-white rounded-lg px-3 py-1.5 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          >
+            {emailSending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+            {emailSending ? 'Enviando…' : 'Enviar'}
+          </button>
+        </div>
+      )}
+
+      {emailStatus === 'sent' && (
+        <div className="px-6 py-2 bg-green-50 border-b border-green-200 text-xs text-green-700">
+          ✓ Reporte enviado correctamente.
+        </div>
+      )}
+      {emailStatus === 'error' && (
+        <div className="px-6 py-2 bg-red-50 border-b border-red-200 text-xs text-red-700">
+          No se pudo enviar el email. Verifica la dirección e inténtalo de nuevo.
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
