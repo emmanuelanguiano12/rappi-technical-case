@@ -64,9 +64,16 @@ Create a `.env.local` file at the project root (or edit the existing one):
 
 ```env
 # API Gateway base URL — no trailing slash
-# Example: https://xxxxxxxx.execute-api.us-east-1.amazonaws.com/prod
 NEXT_PUBLIC_API_URL=https://your-api-gateway-url
+
+# Lambda Function URL for chat (bypasses API Gateway 29s timeout)
+NEXT_PUBLIC_CHAT_URL=https://your-chat-lambda-url.lambda-url.us-east-1.on.aws
+
+# Lambda Function URL for report generation (bypasses API Gateway 29s timeout)
+NEXT_PUBLIC_REPORT_URL=https://your-report-lambda-url.lambda-url.us-east-1.on.aws
 ```
+
+> `NEXT_PUBLIC_CHAT_URL` and `NEXT_PUBLIC_REPORT_URL` take precedence over `NEXT_PUBLIC_API_URL`. If not set, the app falls back to `{NEXT_PUBLIC_API_URL}/chat` and `{NEXT_PUBLIC_API_URL}/report`.
 
 ### 3. Start the development server
 
@@ -114,12 +121,15 @@ The frontend consumes two backend endpoints:
 
 ## Estimated Cost per Use
 
+Model: **Claude 3.5 Haiku** (`us.anthropic.claude-3-5-haiku-20241022-v1:0`) via Amazon Bedrock cross-region inference.
+
 | Operation | Estimated Cost |
 |---|---|
-| Chat session (10 questions) | ~$0.05–$0.15 (Claude 3 Sonnet on Bedrock) |
-| Report generation | ~$0.10–$0.30 (full dataset analysis) |
+| Chat message (single question) | ~$0.001–$0.005 (Haiku input + output tokens) |
+| Chat session (10 questions) | ~$0.01–$0.05 |
+| Report generation | ~$0.02–$0.08 (full dataset analysis + report output) |
 
-> Costs vary depending on the model selected in Bedrock and the volume of data processed.
+> Costs vary based on response length and number of tool calls made by the agent per question.
 
 
 ## Funcionalidades
@@ -184,9 +194,16 @@ Crea un archivo `.env.local` en la raíz del proyecto (o edita el existente):
 
 ```env
 # URL base del API Gateway sin trailing slash
-# Ejemplo: https://xxxxxxxx.execute-api.us-east-1.amazonaws.com/prod
 NEXT_PUBLIC_API_URL=https://tu-api-gateway-url
+
+# Lambda Function URL para el chat (sin límite de 29s de API Gateway)
+NEXT_PUBLIC_CHAT_URL=https://tu-chat-lambda-url.lambda-url.us-east-1.on.aws
+
+# Lambda Function URL para el reporte (sin límite de 29s de API Gateway)
+NEXT_PUBLIC_REPORT_URL=https://tu-report-lambda-url.lambda-url.us-east-1.on.aws
 ```
+
+> `NEXT_PUBLIC_CHAT_URL` y `NEXT_PUBLIC_REPORT_URL` tienen prioridad sobre `NEXT_PUBLIC_API_URL`. Si no están definidas, el app usa `{NEXT_PUBLIC_API_URL}/chat` y `{NEXT_PUBLIC_API_URL}/report` como fallback.
 
 ### 3. Levantar el servidor de desarrollo
 
@@ -234,9 +251,12 @@ El frontend consume dos endpoints del backend:
 
 ## Costo estimado por uso
 
+Modelo: **Claude 3.5 Haiku** (`us.anthropic.claude-3-5-haiku-20241022-v1:0`) vía Amazon Bedrock cross-region inference.
+
 | Operación | Costo estimado |
 |---|---|
-| Sesión de chat (10 preguntas) | ~$0.05–$0.15 (Claude 3 Sonnet en Bedrock) |
-| Generación de reporte | ~$0.10–$0.30 (análisis completo del dataset) |
+| Mensaje de chat (pregunta individual) | ~$0.001–$0.005 (tokens de entrada + salida de Haiku) |
+| Sesión de chat (10 preguntas) | ~$0.01–$0.05 |
+| Generación de reporte | ~$0.02–$0.08 (análisis completo del dataset + reporte) |
 
-> Los costos varían según el modelo seleccionado en Bedrock y el volumen de datos procesados.
+> Los costos varían según la longitud de la respuesta y el número de tool calls que el agente realice por pregunta.
